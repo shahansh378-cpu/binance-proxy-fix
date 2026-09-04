@@ -4,7 +4,6 @@ const cors = require('cors');
 
 const app = express();
 
-// Enable CORS for Netlify requests
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -13,18 +12,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// Handle CORS Preflight checks
 app.options('*', (req, res) => res.sendStatus(200));
 
 app.all('*', async (req, res) => {
     try {
         const targetUrl = `https://api.binance.com${req.originalUrl}`;
         
-        // Pass essential headers & spoof browser User-Agent
         const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0.0.0 Safari/537.36',
             'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Cache-Control': 'no-cache'
         };
 
         if (req.headers['x-mbx-apikey']) {
@@ -36,16 +33,13 @@ app.all('*', async (req, res) => {
             url: targetUrl,
             headers: headers,
             data: req.body && Object.keys(req.body).length > 0 ? req.body : undefined,
-            timeout: 10000
+            timeout: 10000,
+            validateStatus: () => true
         });
 
         res.status(response.status).json(response.data);
     } catch (error) {
-        if (error.response) {
-            res.status(error.response.status).json(error.response.data);
-        } else {
-            res.status(500).json({ error: 'Proxy request failed', details: error.message });
-        }
+        res.status(500).json({ error: 'Proxy request failed', details: error.message });
     }
 });
 
